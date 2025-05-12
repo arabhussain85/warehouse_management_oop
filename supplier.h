@@ -86,15 +86,15 @@ public:
     }
 
     void display() const {
-        cout << "┌─────────────────────────────────────────┐\n";
-        cout << "│ " << CYAN << BOLD << "Supplier ID: " << RESET << supplierID << string(30 - to_string(supplierID).length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Name: " << RESET << name << string(37 - name.length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Contact Person: " << RESET << contactPerson << string(27 - contactPerson.length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Phone: " << RESET << phone << string(36 - phone.length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Email: " << RESET << email << string(36 - email.length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Address: " << RESET << address << string(34 - address.length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Status: " << RESET << getStatusString() << string(35 - getStatusString().length(), ' ') << "│\n";
-        cout << "└─────────────────────────────────────────┘\n";
+        cout << "┌───────────────────────────────────────────────────┐\n";
+        cout << "│ " << CYAN << BOLD << "Supplier ID: " << RESET << setw(10) << left << supplierID << "                          │\n";
+        cout << "│ " << CYAN << BOLD << "Name: " << RESET << setw(42) << left << name << " │\n";
+        cout << "│ " << CYAN << BOLD << "Contact Person: " << RESET << setw(32) << left << contactPerson << " │\n";
+        cout << "│ " << CYAN << BOLD << "Phone: " << RESET << setw(41) << left << phone << " │\n";
+        cout << "│ " << CYAN << BOLD << "Email: " << RESET << setw(41) << left << email << " │\n";
+        cout << "│ " << CYAN << BOLD << "Address: " << RESET << setw(39) << left << address << " │\n";
+        cout << "│ " << CYAN << BOLD << "Status: " << RESET << setw(40) << left << getStatusString() << " │\n";
+        cout << "└───────────────────────────────────────────────────┘\n";
     }
 
     void saveToFile(const string& filename) const {
@@ -237,4 +237,3 @@ public:
 int Supplier::nextID = 1;
 
 #endif
-

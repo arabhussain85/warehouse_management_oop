@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <iomanip>
 #include "utils.h"
 
 using namespace std;
@@ -69,14 +70,14 @@ public:
     }
 
     void display() const {
-        cout << "┌─────────────────────────────────────────┐\n";
-        cout << "│ " << CYAN << BOLD << "Staff ID: " << RESET << staffID << string(32 - to_string(staffID).length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Username: " << RESET << username << string(32 - username.length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Name: " << RESET << name << string(37 - name.length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Phone: " << RESET << phone << string(36 - phone.length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Email: " << RESET << email << string(36 - email.length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Role: " << RESET << getRoleString() << string(37 - getRoleString().length(), ' ') << "│\n";
-        cout << "└─────────────────────────────────────────┘\n";
+        cout << "┌───────────────────────────────────────────────────┐\n";
+        cout << "│ " << CYAN << BOLD << "Staff ID: " << RESET << setw(10) << left << staffID << "                          │\n";
+        cout << "│ " << CYAN << BOLD << "Username: " << RESET << setw(38) << left << username << " │\n";
+        cout << "│ " << CYAN << BOLD << "Name: " << RESET << setw(42) << left << name << " │\n";
+        cout << "│ " << CYAN << BOLD << "Phone: " << RESET << setw(41) << left << phone << " │\n";
+        cout << "│ " << CYAN << BOLD << "Email: " << RESET << setw(41) << left << email << " │\n";
+        cout << "│ " << CYAN << BOLD << "Role: " << RESET << setw(42) << left << getRoleString() << " │\n";
+        cout << "└───────────────────────────────────────────────────┘\n";
     }
 
     string getRoleString() const {

@@ -5,12 +5,14 @@
 #include <limits>
 #include <ctime>
 #include <cstdlib>
+#include <iomanip>
 #include "utils.h"
 #include "staff.h"
 #include "supplier.h"
 #include "product.h"
 #include "order.h"
 #include "auth.h"
+#include "supplier_product_manager.h"
 
 using namespace std;
 
@@ -36,7 +38,7 @@ void addProduct(vector<Product>& inventory) {
     float price;
     int quantity;
     
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     
     cin.clear();
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -59,7 +61,7 @@ void addProduct(vector<Product>& inventory) {
     cout << "│ " << YELLOW << "Enter Description (optional): " << RESET;
     getline(cin, description);
     
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     Product newProduct(name, price, quantity, category, description);
     
@@ -81,9 +83,40 @@ void viewProducts(const vector<Product>& inventory) {
     
     cout << CYAN << BOLD << "Total Products: " << RESET << inventory.size() << "\n\n";
     
+    // Display products in a table format
+    cout << "┌────────┬──────────────────────────┬────────┬──────────┬──────────────────────┐\n";
+    cout << "│ " << CYAN << BOLD << "ID     " << RESET << "│ " << CYAN << BOLD << "Name                     " << RESET << "│ " << CYAN << BOLD << "Price  " << RESET << "│ " << CYAN << BOLD << "Quantity " << RESET << "│ " << CYAN << BOLD << "Category            " << RESET << "│\n";
+    cout << "├────────┼──────────────────────────┼────────┼──────────┼──────────────────────┤\n";
+    
     for (const auto& p : inventory) {
-        p.display();
-        cout << "\n";
+        cout << "│ " << setw(6) << left << p.getID() << " │ " 
+             << setw(24) << left << (p.getName().length() > 24 ? p.getName().substr(0, 21) + "..." : p.getName()) << " │ $"
+             << setw(5) << left << fixed << setprecision(2) << p.getPrice() << " │ " 
+             << setw(8) << left << p.getQuantity() << " │ " 
+             << setw(20) << left << (p.getCategory().length() > 20 ? p.getCategory().substr(0, 17) + "..." : p.getCategory()) << " │\n";
+    }
+    
+    cout << "└────────┴──────────────────────────┴────────┴──────────┴──────────────────────┘\n";
+    
+    cout << "\nEnter a product ID to view details or press 0 to return: ";
+    int id;
+    cin >> id;
+    
+    if (id > 0) {
+        bool found = false;
+        for (const auto& p : inventory) {
+            if (p.getID() == id) {
+                clearScreen();
+                cout << "\n";
+                p.display();
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            cout << RED << "Product not found.\n" << RESET;
+        }
     }
     
     waitForAnyKey();
@@ -93,10 +126,10 @@ void updateProduct(vector<Product>& inventory) {
     displayMenuHeader("UPDATE PRODUCT");
     
     int updateID;
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     cout << "│ " << YELLOW << "Enter Product ID to update: " << RESET;
     cin >> updateID;
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     bool updateFound = false;
     for (auto& p : inventory) {
@@ -111,7 +144,7 @@ void updateProduct(vector<Product>& inventory) {
             p.display();
             cout << "\n";
             
-            cout << CYAN << "┌─────────────────────────────────────────┐\n";
+            cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
             
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -139,7 +172,7 @@ void updateProduct(vector<Product>& inventory) {
             getline(cin, newDesc);
             if (!newDesc.empty()) p.setDescription(newDesc);
             
-            cout << CYAN << "└─────────────────────────────────────────┘\n";
+            cout << "└───────────────────────────────────────────────────┘\n";
             
             loadingScreen("Updating product");
             
@@ -148,7 +181,8 @@ void updateProduct(vector<Product>& inventory) {
             for (const auto& product : inventory) {
                 file << product.getID() << "," << product.getName() << "," 
                      << product.getPrice() << "," << product.getQuantity() << ","
-                     << product.getCategory() << "," << product.getDescription() << "\n";
+                     << product.getCategory() << "," << product.getDescription() << ","
+                     << product.getSupplierID() << "\n";
             }
             file.close();
             
@@ -166,10 +200,10 @@ void deleteProduct(vector<Product>& inventory) {
     displayMenuHeader("DELETE PRODUCT");
     
     int deleteID;
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     cout << "│ " << YELLOW << "Enter Product ID to delete: " << RESET;
     cin >> deleteID;
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     bool deleteFound = false;
     for (auto it = inventory.begin(); it != inventory.end(); ++it) {
@@ -195,7 +229,8 @@ void deleteProduct(vector<Product>& inventory) {
                 for (const auto& product : inventory) {
                     file << product.getID() << "," << product.getName() << "," 
                          << product.getPrice() << "," << product.getQuantity() << ","
-                         << product.getCategory() << "," << product.getDescription() << "\n";
+                         << product.getCategory() << "," << product.getDescription() << ","
+                         << product.getSupplierID() << "\n";
                 }
                 file.close();
                 
@@ -215,11 +250,11 @@ void deleteProduct(vector<Product>& inventory) {
 void searchProduct(const vector<Product>& inventory) {
     displayMenuHeader("SEARCH PRODUCT");
     
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
-    cout << "│ " << YELLOW << "1. Search by ID" << RESET << "                       │\n";
-    cout << "│ " << YELLOW << "2. Search by Name" << RESET << "                     │\n";
-    cout << "│ " << YELLOW << "3. Back to Product Menu" << RESET << "               │\n";
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
+    cout << "│ " << YELLOW << "1. Search by ID" << RESET << "                                 │\n";
+    cout << "│ " << YELLOW << "2. Search by Name" << RESET << "                               │\n";
+    cout << "│ " << YELLOW << "3. Back to Product Menu" << RESET << "                         │\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     cout << CYAN << "Select an option (1-3): " << RESET;
     
     char choice = singleInput();
@@ -229,10 +264,10 @@ void searchProduct(const vector<Product>& inventory) {
             displayMenuHeader("SEARCH BY ID");
             
             int searchID;
-            cout << CYAN << "┌─────────────────────────────────────────┐\n";
+            cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
             cout << "│ " << YELLOW << "Enter Product ID to search: " << RESET;
             cin >> searchID;
-            cout << CYAN << "└─────────────────────────────────────────┘\n";
+            cout << "└───────────────────────────────────────────────────┘\n";
             
             loadingScreen("Searching for product");
             
@@ -258,14 +293,14 @@ void searchProduct(const vector<Product>& inventory) {
             displayMenuHeader("SEARCH BY NAME");
             
             string searchName;
-            cout << CYAN << "┌─────────────────────────────────────────┐\n";
+            cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
             cout << "│ " << YELLOW << "Enter Product Name to search: " << RESET;
             
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             
             getline(cin, searchName);
-            cout << CYAN << "└─────────────────────────────────────────┘\n";
+            cout << "└───────────────────────────────────────────────────┘\n";
             
             loadingScreen("Searching for products");
             
@@ -277,9 +312,40 @@ void searchProduct(const vector<Product>& inventory) {
                 displayMenuHeader("SEARCH RESULTS");
                 cout << GREEN << "Found " << results.size() << " product(s) matching '" << searchName << "':\n\n" << RESET;
                 
+                // Display results in a table format
+                cout << "┌────────┬──────────────────────────┬────────┬──────────┬──────────────────────┐\n";
+                cout << "│ " << CYAN << BOLD << "ID     " << RESET << "│ " << CYAN << BOLD << "Name                     " << RESET << "│ " << CYAN << BOLD << "Price  " << RESET << "│ " << CYAN << BOLD << "Quantity " << RESET << "│ " << CYAN << BOLD << "Category            " << RESET << "│\n";
+                cout << "├────────┼──────────────────────────┼────────┼──────────┼──────────────────────┤\n";
+                
                 for (const auto& p : results) {
-                    p.display();
-                    cout << "\n";
+                    cout << "│ " << setw(6) << left << p.getID() << " │ " 
+                         << setw(24) << left << (p.getName().length() > 24 ? p.getName().substr(0, 21) + "..." : p.getName()) << " │ $"
+                         << setw(5) << left << fixed << setprecision(2) << p.getPrice() << " │ " 
+                         << setw(8) << left << p.getQuantity() << " │ " 
+                         << setw(20) << left << (p.getCategory().length() > 20 ? p.getCategory().substr(0, 17) + "..." : p.getCategory()) << " │\n";
+                }
+                
+                cout << "└────────┴──────────────────────────┴────────┴──────────┴──────────────────────┘\n";
+                
+                cout << "\nEnter a product ID to view details or press 0 to return: ";
+                int id;
+                cin >> id;
+                
+                if (id > 0) {
+                    bool found = false;
+                    for (const auto& p : results) {
+                        if (p.getID() == id) {
+                            clearScreen();
+                            cout << "\n";
+                            p.display();
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!found) {
+                        cout << RED << "Product not found.\n" << RESET;
+                    }
                 }
                 
                 waitForAnyKey();
@@ -299,7 +365,7 @@ void addSupplier(vector<Supplier>& suppliers) {
     
     string name, contactPerson, phone, email, address, username, password;
     
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     
     cin.clear();
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -325,7 +391,7 @@ void addSupplier(vector<Supplier>& suppliers) {
     // Check if username already exists
     Supplier existingSupplier = Supplier::findByUsername(SUPPLIERS_FILE, username);
     if (!existingSupplier.getUsername().empty()) {
-        cout << CYAN << "└─────────────────────────────────────────┘\n";
+        cout << "└───────────────────────────────────────────────────┘\n";
         showError("Username already exists!");
         return;
     }
@@ -333,7 +399,7 @@ void addSupplier(vector<Supplier>& suppliers) {
     cout << "│ " << YELLOW << "Create Password: " << RESET;
     password = getMaskedPassword();
     
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     Supplier newSupplier(name, contactPerson, phone, email, address, username, password);
     
@@ -355,9 +421,39 @@ void viewSuppliers(const vector<Supplier>& suppliers) {
     
     cout << CYAN << BOLD << "Total Suppliers: " << RESET << suppliers.size() << "\n\n";
     
+    // Display suppliers in a table format
+    cout << "┌────────┬──────────────────────────┬──────────────────────────┬────────────────┐\n";
+    cout << "│ " << CYAN << BOLD << "ID     " << RESET << "│ " << CYAN << BOLD << "Name                     " << RESET << "│ " << CYAN << BOLD << "Contact Person           " << RESET << "│ " << CYAN << BOLD << "Status        " << RESET << "│\n";
+    cout << "├────────┼──────────────────────────┼──────────────────────────┼────────────────┤\n";
+    
     for (const auto& s : suppliers) {
-        s.display();
-        cout << "\n";
+        cout << "│ " << setw(6) << left << s.getID() << " │ " 
+             << setw(24) << left << (s.getName().length() > 24 ? s.getName().substr(0, 21) + "..." : s.getName()) << " │ "
+             << setw(24) << left << (s.getContactPerson().length() > 24 ? s.getContactPerson().substr(0, 21) + "..." : s.getContactPerson()) << " │ " 
+             << setw(14) << left << s.getStatusString() << " │\n";
+    }
+    
+    cout << "└────────┴──────────────────────────┴──────────────────────────┴────────────────┘\n";
+    
+    cout << "\nEnter a supplier ID to view details or press 0 to return: ";
+    int id;
+    cin >> id;
+    
+    if (id > 0) {
+        bool found = false;
+        for (const auto& s : suppliers) {
+            if (s.getID() == id) {
+                clearScreen();
+                cout << "\n";
+                s.display();
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            cout << RED << "Supplier not found.\n" << RESET;
+        }
     }
     
     waitForAnyKey();
@@ -367,10 +463,10 @@ void updateSupplier(vector<Supplier>& suppliers) {
     displayMenuHeader("UPDATE SUPPLIER");
     
     int updateID;
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     cout << "│ " << YELLOW << "Enter Supplier ID to update: " << RESET;
     cin >> updateID;
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     bool updateFound = false;
     for (auto& s : suppliers) {
@@ -384,7 +480,7 @@ void updateSupplier(vector<Supplier>& suppliers) {
             s.display();
             cout << "\n";
             
-            cout << CYAN << "┌─────────────────────────────────────────┐\n";
+            cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
             
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -415,7 +511,7 @@ void updateSupplier(vector<Supplier>& suppliers) {
                 // Check if username already exists
                 Supplier existingSupplier = Supplier::findByUsername(SUPPLIERS_FILE, newUsername);
                 if (!existingSupplier.getUsername().empty() && existingSupplier.getID() != s.getID()) {
-                    cout << CYAN << "└─────────────────────────────────────────┘\n";
+                    cout << "└───────────────────────────────────────────────────┘\n";
                     showError("Username already exists!");
                     return;
                 }
@@ -430,7 +526,7 @@ void updateSupplier(vector<Supplier>& suppliers) {
             cin >> newStatus;
             if (newStatus >= 1 && newStatus <= 3) s.setStatus(static_cast<SupplierStatus>(newStatus));
             
-            cout << CYAN << "└─────────────────────────────────────────┘\n";
+            cout << "└───────────────────────────────────────────────────┘\n";
             
             loadingScreen("Updating supplier");
             
@@ -459,10 +555,10 @@ void deleteSupplier(vector<Supplier>& suppliers) {
     displayMenuHeader("DELETE SUPPLIER");
     
     int deleteID;
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     cout << "│ " << YELLOW << "Enter Supplier ID to delete: " << RESET;
     cin >> deleteID;
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     bool deleteFound = false;
     for (auto it = suppliers.begin(); it != suppliers.end(); ++it) {
@@ -515,7 +611,7 @@ void createOrder(vector<Order>& orders, vector<Product>& inventory) {
     string customerName;
     char addMore = 'y';
     
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     
     cin.clear();
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -529,7 +625,7 @@ void createOrder(vector<Order>& orders, vector<Product>& inventory) {
     cout << "│ " << YELLOW << "Enter Customer Name: " << RESET;
     getline(cin, customerName);
     
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     Order newOrder(customerID, customerName);
     
@@ -543,14 +639,22 @@ void createOrder(vector<Order>& orders, vector<Product>& inventory) {
             return;
         }
         
+        // Display products in a table format
+        cout << "┌────────┬──────────────────────────┬────────┬──────────┐\n";
+        cout << "│ " << CYAN << BOLD << "ID     " << RESET << "│ " << CYAN << BOLD << "Name                     " << RESET << "│ " << CYAN << BOLD << "Price  " << RESET << "│ " << CYAN << BOLD << "Quantity " << RESET << "│\n";
+        cout << "├────────┼──────────────────────────┼────────┼──────────┤\n";
+        
         for (const auto& p : inventory) {
-            cout << CYAN << "ID: " << p.getID() << " | " << p.getName() 
-                 << " | Price: $" << fixed << setprecision(2) << p.getPrice() 
-                 << " | Stock: " << p.getQuantity() << "\n" << RESET;
+            cout << "│ " << setw(6) << left << p.getID() << " │ " 
+                 << setw(24) << left << (p.getName().length() > 24 ? p.getName().substr(0, 21) + "..." : p.getName()) << " │ $"
+                 << setw(5) << left << fixed << setprecision(2) << p.getPrice() << " │ " 
+                 << setw(8) << left << p.getQuantity() << " │\n";
         }
         
+        cout << "└────────┴──────────────────────────┴────────┴──────────┘\n";
+        
         cout << "\n";
-        cout << CYAN << "┌─────────────────────────────────────────┐\n";
+        cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
         cout << "│ " << YELLOW << "Enter Product ID to add: " << RESET;
         
         int productID;
@@ -566,15 +670,15 @@ void createOrder(vector<Order>& orders, vector<Product>& inventory) {
                 cin >> quantity;
                 
                 if (quantity <= 0) {
-                    cout << CYAN << "└─────────────────────────────────────────┘\n";
+                    cout << "└───────────────────────────────────────────────────┘\n";
                     showError("Quantity must be positive.");
                 } else if (quantity > p.getQuantity()) {
-                    cout << CYAN << "└─────────────────────────────────────────┘\n";
+                    cout << "└───────────────────────────────────────────────────┘\n";
                     showError("Not enough stock available.");
                 } else {
                     newOrder.addItem(p, quantity);
                     p.removeStock(quantity);
-                    cout << CYAN << "└─────────────────────────────────────────┘\n";
+                    cout << "└───────────────────────────────────────────────────┘\n";
                     showSuccess("Item added to order.");
                 }
                 break;
@@ -582,7 +686,7 @@ void createOrder(vector<Order>& orders, vector<Product>& inventory) {
         }
         
         if (!productFound) {
-            cout << CYAN << "└─────────────────────────────────────────┘\n";
+            cout << "└───────────────────────────────────────────────────┘\n";
             showError("Product not found.");
         }
         
@@ -605,7 +709,8 @@ void createOrder(vector<Order>& orders, vector<Product>& inventory) {
     for (const auto& product : inventory) {
         file << product.getID() << "," << product.getName() << "," 
              << product.getPrice() << "," << product.getQuantity() << ","
-             << product.getCategory() << "," << product.getDescription() << "\n";
+             << product.getCategory() << "," << product.getDescription() << ","
+             << product.getSupplierID() << "\n";
     }
     file.close();
     
@@ -622,9 +727,40 @@ void viewOrders(const vector<Order>& orders) {
     
     cout << CYAN << BOLD << "Total Orders: " << RESET << orders.size() << "\n\n";
     
+    // Display orders in a table format
+    cout << "┌────────┬────────┬──────────────────────────┬────────────────┬──────────────────┐\n";
+    cout << "│ " << CYAN << BOLD << "Order ID" << RESET << "│ " << CYAN << BOLD << "Cust ID" << RESET << "│ " << CYAN << BOLD << "Customer Name           " << RESET << "│ " << CYAN << BOLD << "Total Amount  " << RESET << "│ " << CYAN << BOLD << "Status          " << RESET << "│\n";
+    cout << "├────────┼────────┼──────────────────────────┼────────────────┼──────────────────┤\n";
+    
     for (const auto& o : orders) {
-        o.display();
-        cout << "\n";
+        cout << "│ " << setw(6) << left << o.getID() << " │ " 
+             << setw(6) << left << o.getCustomerID() << " │ "
+             << setw(24) << left << (o.getCustomerName().length() > 24 ? o.getCustomerName().substr(0, 21) + "..." : o.getCustomerName()) << " │ $"
+             << setw(12) << left << fixed << setprecision(2) << o.getTotalAmount() << " │ " 
+             << setw(16) << left << o.getStatusString() << " │\n";
+    }
+    
+    cout << "└────────┴────────┴──────────────────────────┴────────────────┴──────────────────┘\n";
+    
+    cout << "\nEnter an order ID to view details or press 0 to return: ";
+    int id;
+    cin >> id;
+    
+    if (id > 0) {
+        bool found = false;
+        for (const auto& o : orders) {
+            if (o.getID() == id) {
+                clearScreen();
+                cout << "\n";
+                o.display();
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            cout << RED << "Order not found.\n" << RESET;
+        }
     }
     
     waitForAnyKey();
@@ -634,10 +770,10 @@ void updateOrderStatus(vector<Order>& orders) {
     displayMenuHeader("UPDATE ORDER STATUS");
     
     int updateID;
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     cout << "│ " << YELLOW << "Enter Order ID to update: " << RESET;
     cin >> updateID;
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     bool updateFound = false;
     for (auto& o : orders) {
@@ -649,7 +785,7 @@ void updateOrderStatus(vector<Order>& orders) {
             o.display();
             cout << "\n";
             
-            cout << CYAN << "┌─────────────────────────────────────────┐\n";
+            cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
             cout << "│ " << YELLOW << "Current Status: " << RESET << o.getStatusString() << "\n";
             cout << "│ " << YELLOW << "Select New Status:" << RESET << "\n";
             cout << "│ " << YELLOW << "1. Pending" << RESET << "\n";
@@ -661,7 +797,7 @@ void updateOrderStatus(vector<Order>& orders) {
             
             int statusChoice;
             cin >> statusChoice;
-            cout << CYAN << "└─────────────────────────────────────────┘\n";
+            cout << "└───────────────────────────────────────────────────┘\n";
             
             if (statusChoice < 1 || statusChoice > 5) {
                 showError("Invalid status choice.");
@@ -701,9 +837,39 @@ void viewStaffList(const vector<Staff>& staffList) {
     
     cout << CYAN << BOLD << "Total Staff: " << RESET << staffList.size() << "\n\n";
     
+    // Display staff in a table format
+    cout << "┌────────┬──────────────────────────┬──────────────────────────┬────────────────┐\n";
+    cout << "│ " << CYAN << BOLD << "ID     " << RESET << "│ " << CYAN << BOLD << "Name                     " << RESET << "│ " << CYAN << BOLD << "Username                " << RESET << "│ " << CYAN << BOLD << "Role          " << RESET << "│\n";
+    cout << "├────────┼──────────────────────────┼──────────────────────────┼────────────────┤\n";
+    
     for (const auto& s : staffList) {
-        s.display();
-        cout << "\n";
+        cout << "│ " << setw(6) << left << s.getID() << " │ " 
+             << setw(24) << left << (s.getName().length() > 24 ? s.getName().substr(0, 21) + "..." : s.getName()) << " │ "
+             << setw(24) << left << s.getUsername() << " │ " 
+             << setw(14) << left << s.getRoleString() << " │\n";
+    }
+    
+    cout << "└────────┴──────────────────────────┴──────────────────────────┴────────────────┘\n";
+    
+    cout << "\nEnter a staff ID to view details or press 0 to return: ";
+    int id;
+    cin >> id;
+    
+    if (id > 0) {
+        bool found = false;
+        for (const auto& s : staffList) {
+            if (s.getID() == id) {
+                clearScreen();
+                cout << "\n";
+                s.display();
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            cout << RED << "Staff not found.\n" << RESET;
+        }
     }
     
     waitForAnyKey();
@@ -718,10 +884,10 @@ void updateStaffMember(vector<Staff>& staffList, const Staff& currentUser) {
     }
     
     int updateID;
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     cout << "│ " << YELLOW << "Enter Staff ID to update: " << RESET;
     cin >> updateID;
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     bool updateFound = false;
     for (auto& s : staffList) {
@@ -735,7 +901,7 @@ void updateStaffMember(vector<Staff>& staffList, const Staff& currentUser) {
             s.display();
             cout << "\n";
             
-            cout << CYAN << "┌─────────────────────────────────────────┐\n";
+            cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
             
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -758,7 +924,7 @@ void updateStaffMember(vector<Staff>& staffList, const Staff& currentUser) {
                 // Check if username already exists
                 Staff existingUser = Staff::findByUsername(STAFF_FILE, newUsername);
                 if (!existingUser.getUsername().empty() && existingUser.getID() != s.getID()) {
-                    cout << CYAN << "└─────────────────────────────────────────┘\n";
+                    cout << "└───────────────────────────────────────────────────┘\n";
                     showError("Username already exists!");
                     return;
                 }
@@ -773,7 +939,7 @@ void updateStaffMember(vector<Staff>& staffList, const Staff& currentUser) {
             cin >> newRole;
             if (newRole >= 1 && newRole <= 3) s.setRole(static_cast<Role>(newRole));
             
-            cout << CYAN << "└─────────────────────────────────────────┘\n";
+            cout << "└───────────────────────────────────────────────────┘\n";
             
             loadingScreen("Updating staff record");
             
@@ -806,10 +972,10 @@ void deleteStaffMember(vector<Staff>& staffList, const Staff& currentUser) {
     }
     
     int deleteID;
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     cout << "│ " << YELLOW << "Enter Staff ID to delete: " << RESET;
     cin >> deleteID;
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     if (deleteID == currentUser.getID()) {
         showError("You cannot delete your own account.");
@@ -873,7 +1039,7 @@ void updateSupplierProfile(Supplier& supplier) {
     
     string newContactPerson, newPhone, newEmail, newAddress, newPassword;
     
-    cout << CYAN << "┌─────────────────────────────────────────┐\n";
+    cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
     
     cin.clear();
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -898,7 +1064,7 @@ void updateSupplierProfile(Supplier& supplier) {
     newPassword = getMaskedPassword();
     if (!newPassword.empty()) supplier.setPassword(newPassword);
     
-    cout << CYAN << "└─────────────────────────────────────────┘\n";
+    cout << "└───────────────────────────────────────────────────┘\n";
     
     loadingScreen("Updating profile");
     
@@ -924,37 +1090,19 @@ void updateSupplierProfile(Supplier& supplier) {
     showSuccess("Profile updated successfully!");
 }
 
-void viewSupplierProducts(const vector<Product>& inventory) {
-    displayMenuHeader("VIEW PRODUCTS");
-    
-    if (inventory.empty()) {
-        showWarning("No products available in the system.");
-        return;
-    }
-    
-    cout << CYAN << BOLD << "Total Products: " << RESET << inventory.size() << "\n\n";
-    
-    for (const auto& p : inventory) {
-        p.display();
-        cout << "\n";
-    }
-    
-    waitForAnyKey();
-}
-
 // Menu handlers
 void handleProductMenu(vector<Product>& inventory) {
     while (true) {
         displayMenuHeader("PRODUCT MANAGEMENT");
         
-        cout << CYAN << "┌─────────────────────────────────────────┐\n";
-        cout << "│ " << YELLOW << "1. Add Product" << RESET << "                        │\n";
-        cout << "│ " << YELLOW << "2. View All Products" << RESET << "                  │\n";
-        cout << "│ " << YELLOW << "3. Update Product" << RESET << "                     │\n";
-        cout << "│ " << YELLOW << "4. Delete Product" << RESET << "                     │\n";
-        cout << "│ " << YELLOW << "5. Search Product" << RESET << "                     │\n";
-        cout << "│ " << YELLOW << "6. Back to Main Menu" << RESET << "                  │\n";
-        cout << CYAN << "└─────────────────────────────────────────┘\n";
+        cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
+        cout << "│ " << YELLOW << "1. Add Product" << RESET << "                                 │\n";
+        cout << "│ " << YELLOW << "2. View All Products" << RESET << "                           │\n";
+        cout << "│ " << YELLOW << "3. Update Product" << RESET << "                              │\n";
+        cout << "│ " << YELLOW << "4. Delete Product" << RESET << "                              │\n";
+        cout << "│ " << YELLOW << "5. Search Product" << RESET << "                              │\n";
+        cout << "│ " << YELLOW << "6. Back to Main Menu" << RESET << "                           │\n";
+        cout << "└───────────────────────────────────────────────────┘\n";
         cout << CYAN << "Select an option (1-6): " << RESET;
         
         char choice = singleInput();
@@ -993,14 +1141,14 @@ void handleSupplierMenu(vector<Supplier>& suppliers, const Staff& currentUser) {
     while (true) {
         displayMenuHeader("SUPPLIER MANAGEMENT");
         
-        cout << CYAN << "┌─────────────────────────────────────────┐\n";
-        cout << "│ " << YELLOW << "1. Add Supplier" << RESET << "                      │\n";
-        cout << "│ " << YELLOW << "2. View All Suppliers" << RESET << "                │\n";
-        cout << "│ " << YELLOW << "3. Update Supplier" << RESET << "                   │\n";
-        cout << "│ " << YELLOW << "4. Delete Supplier" << RESET << "                   │\n";
-        cout << "│ " << YELLOW << "5. Register Supplier Account" << RESET << "         │\n";
-        cout << "│ " << YELLOW << "6. Back to Main Menu" << RESET << "                 │\n";
-        cout << CYAN << "└─────────────────────────────────────────┘\n";
+        cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
+        cout << "│ " << YELLOW << "1. Add Supplier" << RESET << "                                │\n";
+        cout << "│ " << YELLOW << "2. View All Suppliers" << RESET << "                          │\n";
+        cout << "│ " << YELLOW << "3. Update Supplier" << RESET << "                             │\n";
+        cout << "│ " << YELLOW << "4. Delete Supplier" << RESET << "                             │\n";
+        cout << "│ " << YELLOW << "5. Register Supplier Account" << RESET << "                   │\n";
+        cout << "│ " << YELLOW << "6. Back to Main Menu" << RESET << "                           │\n";
+        cout << "└───────────────────────────────────────────────────┘\n";
         cout << CYAN << "Select an option (1-6): " << RESET;
         
         char choice = singleInput();
@@ -1039,12 +1187,12 @@ void handleOrderMenu(vector<Order>& orders, vector<Product>& inventory) {
     while (true) {
         displayMenuHeader("ORDER MANAGEMENT");
         
-        cout << CYAN << "┌─────────────────────────────────────────┐\n";
-        cout << "│ " << YELLOW << "1. Create Order" << RESET << "                      │\n";
-        cout << "│ " << YELLOW << "2. View All Orders" << RESET << "                   │\n";
-        cout << "│ " << YELLOW << "3. Update Order Status" << RESET << "               │\n";
-        cout << "│ " << YELLOW << "4. Back to Main Menu" << RESET << "                 │\n";
-        cout << CYAN << "└─────────────────────────────────────────┘\n";
+        cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
+        cout << "│ " << YELLOW << "1. Create Order" << RESET << "                                │\n";
+        cout << "│ " << YELLOW << "2. View All Orders" << RESET << "                             │\n";
+        cout << "│ " << YELLOW << "3. Update Order Status" << RESET << "                         │\n";
+        cout << "│ " << YELLOW << "4. Back to Main Menu" << RESET << "                           │\n";
+        cout << "└───────────────────────────────────────────────────┘\n";
         cout << CYAN << "Select an option (1-4): " << RESET;
         
         char choice = singleInput();
@@ -1075,13 +1223,13 @@ void handleStaffMenu(vector<Staff>& staffList, const Staff& currentUser) {
     while (true) {
         displayMenuHeader("STAFF MANAGEMENT");
         
-        cout << CYAN << "┌─────────────────────────────────────────┐\n";
-        cout << "│ " << YELLOW << "1. View All Staff" << RESET << "                    │\n";
-        cout << "│ " << YELLOW << "2. Update Staff" << RESET << "                      │\n";
-        cout << "│ " << YELLOW << "3. Delete Staff" << RESET << "                      │\n";
-        cout << "│ " << YELLOW << "4. Register New Staff" << RESET << "                │\n";
-        cout << "│ " << YELLOW << "5. Back to Main Menu" << RESET << "                 │\n";
-        cout << CYAN << "└─────────────────────────────────────────┘\n";
+        cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
+        cout << "│ " << YELLOW << "1. View All Staff" << RESET << "                              │\n";
+        cout << "│ " << YELLOW << "2. Update Staff" << RESET << "                                │\n";
+        cout << "│ " << YELLOW << "3. Delete Staff" << RESET << "                                │\n";
+        cout << "│ " << YELLOW << "4. Register New Staff" << RESET << "                          │\n";
+        cout << "│ " << YELLOW << "5. Back to Main Menu" << RESET << "                           │\n";
+        cout << "└───────────────────────────────────────────────────┘\n";
         cout << CYAN << "Select an option (1-5): " << RESET;
         
         char choice = singleInput();
@@ -1116,15 +1264,16 @@ void handleSupplierDashboard(Supplier& currentSupplier, vector<Product>& invento
     while (true) {
         displayMenuHeader("SUPPLIER DASHBOARD");
         
-        cout << CYAN << "┌─────────────────────────────────────────┐\n";
-        cout << "│ " << YELLOW << "Welcome, " << currentSupplier.getName() << RESET << string(39 - currentSupplier.getName().length(), ' ') << "│\n";
-        cout << CYAN << "├─────────────────────────────────────────┤\n";
-        cout << "│ " << YELLOW << "1. View Profile" << RESET << "                      │\n";
-        cout << "│ " << YELLOW << "2. Update Profile" << RESET << "                    │\n";
-        cout << "│ " << YELLOW << "3. View Products" << RESET << "                     │\n";
-        cout << "│ " << YELLOW << "4. Logout" << RESET << "                            │\n";
-        cout << CYAN << "└─────────────────────────────────────────┘\n";
-        cout << CYAN << "Select an option (1-4): " << RESET;
+        cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
+        cout << "│ " << YELLOW << "Welcome, " << currentSupplier.getName() << RESET << string(45 - currentSupplier.getName().length(), ' ') << "│\n";
+        cout << "├───────────────────────────────────────────────────┤\n";
+        cout << "│ " << YELLOW << "1. View Profile" << RESET << "                                │\n";
+        cout << "│ " << YELLOW << "2. Update Profile" << RESET << "                              │\n";
+        cout << "│ " << YELLOW << "3. Product Management" << RESET << "                          │\n";
+        cout << "│ " << YELLOW << "4. View All Products" << RESET << "                           │\n";
+        cout << "│ " << YELLOW << "5. Logout" << RESET << "                                      │\n";
+        cout << "└───────────────────────────────────────────────────┘\n";
+        cout << CYAN << "Select an option (1-5): " << RESET;
         
         char choice = singleInput();
         
@@ -1137,11 +1286,15 @@ void handleSupplierDashboard(Supplier& currentSupplier, vector<Product>& invento
                 loadingScreen("Opening Update Profile");
                 updateSupplierProfile(currentSupplier); 
                 break;
-            case '3': 
-                loadingScreen("Loading Products");
-                viewSupplierProducts(inventory); 
+            case '3':
+                loadingScreen("Opening Product Management");
+                handleSupplierProductMenu(inventory, currentSupplier, PRODUCTS_FILE);
                 break;
             case '4': 
+                loadingScreen("Loading Products");
+                viewProducts(inventory); 
+                break;
+            case '5': 
                 logout();
                 return;
             default:
@@ -1190,11 +1343,11 @@ int main() {
         if (!isStaffLoggedIn && !isSupplierLoggedIn) {
             displayMenuHeader("BUSINESS MANAGEMENT SYSTEM");
             
-            cout << CYAN << "┌─────────────────────────────────────────┐\n";
-            cout << "│ " << YELLOW << "1. Staff Login" << RESET << "                        │\n";
-            cout << "│ " << YELLOW << "2. Supplier Login" << RESET << "                     │\n";
-            cout << "│ " << YELLOW << "3. Exit" << RESET << "                               │\n";
-            cout << CYAN << "└─────────────────────────────────────────┘\n";
+            cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
+            cout << "│ " << YELLOW << "1. Staff Login" << RESET << "                                 │\n";
+            cout << "│ " << YELLOW << "2. Supplier Login" << RESET << "                              │\n";
+            cout << "│ " << YELLOW << "3. Exit" << RESET << "                                        │\n";
+            cout << "└───────────────────────────────────────────────────┘\n";
             cout << CYAN << "Select an option (1-3): " << RESET;
             
             char choice = singleInput();
@@ -1229,24 +1382,24 @@ int main() {
             if (currentUser.getRole() == ADMIN) {
                 displayMenuHeader("ADMIN MENU");
                 
-                cout << CYAN << "┌─────────────────────────────────────────┐\n";
-                cout << "│ " << YELLOW << "Welcome, " << currentUser.getName() << RESET << string(39 - currentUser.getName().length(), ' ') << "│\n";
-                cout << CYAN << "├─────────────────────────────────────────┤\n";
-                cout << "│ " << YELLOW << "1. Product Management" << RESET << "                 │\n";
-                cout << "│ " << YELLOW << "2. Supplier Management" << RESET << "                │\n";
-                cout << "│ " << YELLOW << "3. Order Management" << RESET << "                   │\n";
-                cout << "│ " << YELLOW << "4. Staff Management" << RESET << "                   │\n";
-                cout << "│ " << YELLOW << "5. Logout" << RESET << "                             │\n";
-                cout << "│ " << YELLOW << "6. Exit" << RESET << "                               │\n";
-                cout << CYAN << "└─────────────────────────────────────────┘\n";
+                cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
+                cout << "│ " << YELLOW << "Welcome, " << currentUser.getName() << RESET << string(45 - currentUser.getName().length(), ' ') << "│\n";
+                cout << "├───────────────────────────────────────────────────┤\n";
+                cout << "│ " << YELLOW << "1. View All Products" << RESET << "                           │\n";
+                cout << "│ " << YELLOW << "2. Supplier Management" << RESET << "                         │\n";
+                cout << "│ " << YELLOW << "3. Order Management" << RESET << "                            │\n";
+                cout << "│ " << YELLOW << "4. Staff Management" << RESET << "                            │\n";
+                cout << "│ " << YELLOW << "5. Logout" << RESET << "                                      │\n";
+                cout << "│ " << YELLOW << "6. Exit" << RESET << "                                        │\n";
+                cout << "└───────────────────────────────────────────────────┘\n";
                 cout << CYAN << "Select an option (1-6): " << RESET;
                 
                 char choice = singleInput();
                 
                 switch (choice) {
                     case '1': 
-                        loadingScreen("Opening Product Management");
-                        handleProductMenu(inventory); 
+                        loadingScreen("Loading Products");
+                        viewProducts(inventory); 
                         break;
                     case '2': 
                         loadingScreen("Opening Supplier Management");
@@ -1274,23 +1427,23 @@ int main() {
             } else if (currentUser.getRole() == MANAGER) {
                 displayMenuHeader("MANAGER MENU");
                 
-                cout << CYAN << "┌─────────────────────────────────────────┐\n";
-                cout << "│ " << YELLOW << "Welcome, " << currentUser.getName() << RESET << string(39 - currentUser.getName().length(), ' ') << "│\n";
-                cout << CYAN << "├─────────────────────────────────────────┤\n";
-                cout << "│ " << YELLOW << "1. Product Management" << RESET << "                 │\n";
-                cout << "│ " << YELLOW << "2. Supplier Management" << RESET << "                │\n";
-                cout << "│ " << YELLOW << "3. Order Management" << RESET << "                   │\n";
-                cout << "│ " << YELLOW << "4. Logout" << RESET << "                             │\n";
-                cout << "│ " << YELLOW << "5. Exit" << RESET << "                               │\n";
-                cout << CYAN << "└─────────────────────────────────────────┘\n";
+                cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
+                cout << "│ " << YELLOW << "Welcome, " << currentUser.getName() << RESET << string(45 - currentUser.getName().length(), ' ') << "│\n";
+                cout << "├───────────────────────────────────────────────────┤\n";
+                cout << "│ " << YELLOW << "1. View All Products" << RESET << "                           │\n";
+                cout << "│ " << YELLOW << "2. Supplier Management" << RESET << "                         │\n";
+                cout << "│ " << YELLOW << "3. Order Management" << RESET << "                            │\n";
+                cout << "│ " << YELLOW << "4. Logout" << RESET << "                                      │\n";
+                cout << "│ " << YELLOW << "5. Exit" << RESET << "                                        │\n";
+                cout << "└───────────────────────────────────────────────────┘\n";
                 cout << CYAN << "Select an option (1-5): " << RESET;
                 
                 char choice = singleInput();
                 
                 switch (choice) {
                     case '1': 
-                        loadingScreen("Opening Product Management");
-                        handleProductMenu(inventory); 
+                        loadingScreen("Loading Products");
+                        viewProducts(inventory); 
                         break;
                     case '2': 
                         loadingScreen("Opening Supplier Management");
@@ -1314,16 +1467,16 @@ int main() {
             } else { // STAFF
                 displayMenuHeader("STAFF MENU");
                 
-                cout << CYAN << "┌─────────────────────────────────────────┐\n";
-                cout << "│ " << YELLOW << "Welcome, " << currentUser.getName() << RESET << string(39 - currentUser.getName().length(), ' ') << "│\n";
-                cout << CYAN << "├─────────────────────────────────────────┤\n";
-                cout << "│ " << YELLOW << "1. View Products" << RESET << "                     │\n";
-                cout << "│ " << YELLOW << "2. Search Product" << RESET << "                    │\n";
-                cout << "│ " << YELLOW << "3. View Orders" << RESET << "                       │\n";
-                cout << "│ " << YELLOW << "4. Create Order" << RESET << "                      │\n";
-                cout << "│ " << YELLOW << "5. Logout" << RESET << "                            │\n";
-                cout << "│ " << YELLOW << "6. Exit" << RESET << "                              │\n";
-                cout << CYAN << "└─────────────────────────────────────────┘\n";
+                cout << CYAN << "┌───────────────────────────────────────────────────┐\n";
+                cout << "│ " << YELLOW << "Welcome, " << currentUser.getName() << RESET << string(45 - currentUser.getName().length(), ' ') << "│\n";
+                cout << "├───────────────────────────────────────────────────┤\n";
+                cout << "│ " << YELLOW << "1. View Products" << RESET << "                               │\n";
+                cout << "│ " << YELLOW << "2. Search Product" << RESET << "                              │\n";
+                cout << "│ " << YELLOW << "3. View Orders" << RESET << "                                 │\n";
+                cout << "│ " << YELLOW << "4. Create Order" << RESET << "                                │\n";
+                cout << "│ " << YELLOW << "5. Logout" << RESET << "                                      │\n";
+                cout << "│ " << YELLOW << "6. Exit" << RESET << "                                        │\n";
+                cout << "└───────────────────────────────────────────────────┘\n";
                 cout << CYAN << "Select an option (1-6): " << RESET;
                 
                 char choice = singleInput();

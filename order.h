@@ -7,6 +7,7 @@
 #include <sstream>
 #include <vector>
 #include <ctime>
+#include <iomanip>
 #include "product.h"
 #include "utils.h"
 
@@ -112,25 +113,37 @@ public:
     }
 
     void display() const {
-        cout << "┌─────────────────────────────────────────┐\n";
-        cout << "│ " << CYAN << BOLD << "Order ID: " << RESET << orderID << string(32 - to_string(orderID).length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Customer ID: " << RESET << customerID << string(29 - to_string(customerID).length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Customer Name: " << RESET << customerName << string(27 - customerName.length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Order Date: " << RESET << getFormattedDate() << string(30 - getFormattedDate().length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Status: " << RESET << getStatusString() << string(34 - getStatusString().length(), ' ') << "│\n";
-        cout << "│ " << CYAN << BOLD << "Items:" << RESET << "                                │\n";
+        cout << "┌───────────────────────────────────────────────────┐\n";
+        cout << "│ " << CYAN << BOLD << "Order ID: " << RESET << setw(10) << left << orderID << "                          │\n";
+        cout << "│ " << CYAN << BOLD << "Customer ID: " << RESET << setw(10) << left << customerID << "                       │\n";
+        cout << "│ " << CYAN << BOLD << "Customer Name: " << RESET << setw(32) << left << customerName << " │\n";
+        cout << "│ " << CYAN << BOLD << "Order Date: " << RESET << setw(35) << left << getFormattedDate() << " │\n";
+        cout << "│ " << CYAN << BOLD << "Status: " << RESET << setw(40) << left << getStatusString() << " │\n";
+        cout << "│ " << CYAN << BOLD << "Items:" << RESET << "                                           │\n";
         
-        for (const auto& item : items) {
-            string itemInfo = "  - " + item.productName + " (ID: " + to_string(item.productID) + ")";
-            cout << "│ " << itemInfo << string(39 - itemInfo.length(), ' ') << "│\n";
+        if (items.empty()) {
+            cout << "│   No items in this order                             │\n";
+        } else {
+            cout << "├───────────────────────────────────────────────────┤\n";
+            cout << "│ " << CYAN << setw(4) << left << "ID" << " | " 
+                 << setw(20) << left << "Product" << " | " 
+                 << setw(6) << left << "Price" << " | " 
+                 << setw(4) << left << "Qty" << " | " 
+                 << setw(8) << left << "Subtotal" << RESET << " │\n";
+            cout << "├───────────────────────────────────────────────────┤\n";
             
-            string priceInfo = "    Price: $" + to_string(item.price) + " x " + to_string(item.quantity) + " = $" + to_string(item.subtotal);
-            cout << "│ " << priceInfo << string(39 - priceInfo.length(), ' ') << "│\n";
+            for (const auto& item : items) {
+                cout << "│ " << setw(4) << left << item.productID << " | " 
+                     << setw(20) << left << (item.productName.length() > 20 ? item.productName.substr(0, 17) + "..." : item.productName) << " | " 
+                     << "$" << setw(5) << left << fixed << setprecision(2) << item.price << " | " 
+                     << setw(4) << left << item.quantity << " | " 
+                     << "$" << setw(7) << left << fixed << setprecision(2) << item.subtotal << " │\n";
+            }
         }
         
-        string totalInfo = "Total Amount: $" + to_string(totalAmount);
-        cout << "│ " << CYAN << BOLD << totalInfo << RESET << string(39 - totalInfo.length(), ' ') << "│\n";
-        cout << "└─────────────────────────────────────────┘\n";
+        cout << "├───────────────────────────────────────────────────┤\n";
+        cout << "│ " << CYAN << BOLD << "Total Amount: " << RESET << "$" << setw(32) << left << fixed << setprecision(2) << totalAmount << " │\n";
+        cout << "└───────────────────────────────────────────────────┘\n";
     }
 
     void saveToFile(const string& filename) const {
@@ -302,4 +315,3 @@ public:
 int Order::nextID = 1;
 
 #endif
-
